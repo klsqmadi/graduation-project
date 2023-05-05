@@ -1,7 +1,10 @@
 @import './base.css';
-
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 #app {
   font-weight: normal;
+  height: 100vh;
 }
 
 a,
