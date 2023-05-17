@@ -1,4 +1,4 @@
-const { Sequelize, Model, DataTypes } = require('sequelize');
+const { Sequelize } = require('sequelize');
 
 const config = {
   host: 'localhost',
@@ -7,10 +7,11 @@ const config = {
   database: 'graduation-design',
   port: 3306,
   dialect: 'mysql',
+  timezone: '+08:00',
 };
 
 const sequelize = new Sequelize(config);
-
+exports.sequelize = sequelize;
 sequelize
   .authenticate()
   .then(() => {
@@ -18,32 +19,14 @@ sequelize
   })
   .catch((err) => [console.log(`connect mysql error ${err}`)]);
 
-const User = sequelize.define('user', {
-  id: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true,
-  },
-  name: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  password: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  phone: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
-});
-
-sequelize.sync({ force: true }).then(() => {
-    console.log(`databse table model force sync cover success`);
-}).catch(err => {
-    console.log(`sync fail ${err}`);
-});
-module.export = {
+(async () => {
+  await sequelize.sync({ force: false });
+  const { User } = require('../model/User');
+  const { Table } = require('../model/Table');
+  module.exports = {
     User,
-    sequelize,
-};
+    Table,
+  };
+
+  console.log(`databse table model force sync cover success`);
+})();
