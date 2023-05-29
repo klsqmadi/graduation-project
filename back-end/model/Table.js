@@ -31,7 +31,7 @@ const Sheet = sequelize.define('sheets', {
     allowNull: false,
   },
   blockDataJson: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false,
   },
   bloackIndex: {
@@ -39,15 +39,10 @@ const Sheet = sequelize.define('sheets', {
     allowNull: false,
   },
 });
-Sheet.belongsTo(Table, {
-  foreignKey: 'gridKey',
-  targetKey: 'gridKey',
-});
-
-Sheet.belongsTo(Table, {
-  foreignKey: 'name',
-  targetKey: 'name',
-});
+// Sheet.belongsTo(Table, {
+//   foreignKey: 'gridKey',
+//   targetKey: 'gridKey',
+// });
 module.exports = {
   Table,
   Sheet,

@@ -6,61 +6,143 @@
           <div class="overlay-left">
             <h2>Welcome Back!</h2>
             <p>Please login with your personal info</p>
-            <button class="invert" id="signIn" @click="signUp = !signUp">Sign In</button>
+            <div class="invert button" id="signIn" @click="signUp = !signUp">Sign In</div>
           </div>
           <div class="overlay-right">
             <h2>Hello, Friend!</h2>
             <p>Please enter your personal details</p>
-            <button class="invert" id="signUp" @click="signUp = !signUp">Sign Up</button>
+            <div class="invert button" id="signUp" @click="signUp = !signUp">Sign Up</div>
           </div>
         </div>
       </div>
-      <form class="sign-up" action="#">
+      <form class="sign-up form" action="#">
         <h2>Create login</h2>
         <div>Use your email for registration</div>
-        <el-input v-model="signUpForm.name" placeholder="Name"></el-input>
-        <el-input v-model="signUpForm.phone" placeholder="Phone"></el-input>
-        <el-input v-model="signUpForm.password" placeholder="Password"></el-input>
-        <button @click="onSignUp">Sign Up</button>
+        <el-form :model="signUpForm" :rules="rule" ref="signUpRuleFormRef" status-icon>
+          <el-form-item prop="name">
+            <el-input v-model="signUpForm.name" placeholder="Name"></el-input>
+          </el-form-item>
+          <el-form-item prop="phone">
+            <el-input v-model="signUpForm.phone" placeholder="Phone"></el-input>
+          </el-form-item>
+          <el-form-item prop="password">
+            <el-input v-model="signUpForm.password" placeholder="Password"></el-input>
+          </el-form-item>
+        </el-form>
+        <div class="button" @click="onSignUp(signUpRuleFormRef)">Sign Up</div>
       </form>
-      <form class="sign-in" action="#">
+      <form class="sign-in form" action="#">
         <h2>Sign In</h2>
         <div>Use your account</div>
-        <el-input v-model="signInForm.phone" placeholder="Phone"></el-input>
-        <el-input v-model="signInForm.password" placeholder="Password"></el-input>
+        <el-form :model="signInForm" :rules="rule" ref="signInRuleFormRef">
+          <el-form-item prop="phone">
+            <el-input v-model="signInForm.phone" placeholder="Phone"></el-input>
+          </el-form-item>
+          <el-form-item prop="password">
+            <el-input v-model="signInForm.password" placeholder="Password"></el-input>
+          </el-form-item>
+        </el-form>
         <a href="#">Forgot your password?</a>
-        <button @click="onSignIn">Sign In</button>
+        <div class="button" @click="onSignIn(signInRuleFormRef)">Sign In</div>
       </form>
     </div>
   </article>
 </template>
 
 <script setup>
-import { reactive, ref, toRefs } from 'vue';
+import { reactive, ref, unref } from 'vue';
+import { useRouter } from 'vue-router';
 import { BASE_URL } from '../config/server';
+import { ElMessage } from 'element-plus';
+
 const signUp = ref(false);
 const signInForm = reactive({ phone: '', password: '' });
 const signUpForm = reactive({ phone: '', password: '', name: '' });
+const router = useRouter();
+const NameRegularExpression = /^[a-zA-Z0-9\u4e00-\u9fa5]{2,8}$/;
+const PasswordRegularExpression = /^[a-zA-Z0-9]{2,16}$/;
+const PhoneRegularExpression = /^1[3456789]\d{9}$/;
 
-const onSignUp = () => {
-  const { phone, password, name } = toRefs(signUpForm);
-  fetch(`${BASE_URL}/user/register`, {
-    method: 'GET',
-    params: {
-      phone,
-      password,
-      name,
-    },
+const nameValidation = (rule, value, callback) => {
+  if (!NameRegularExpression.test(value)) {
+    callback(new Error('只支持2-8长度的中英文数字，请重新输入'));
+  } else {
+    callback();
+  }
+};
+
+const passwordValidation = (rule, value, callback) => {
+  if (!PasswordRegularExpression.test(value)) {
+    callback(new Error('只支持2-16长度的英文数字，请重新输入'));
+  } else {
+    callback();
+  }
+};
+
+const phoneValidation = (rule, value, callback) => {
+  if (!PhoneRegularExpression.test(value)) {
+    callback(new Error('非法手机号，请重新输入'));
+  } else {
+    callback();
+  }
+};
+
+const rule = reactive({
+  name: [{ validator: nameValidation, trriger: 'blur' }],
+  phone: [{ validator: phoneValidation, trriger: 'blur' }],
+  password: [{ validator: passwordValidation, trriger: 'blur' }],
+});
+const signInRuleFormRef = ref();
+const signUpRuleFormRef = ref();
+
+const onSignUp = (formEl) => {
+  if (!formEl) return;
+  formEl.validate(async (valid) => {
+    if (!valid) return false;
+    const { phone, password, name } = unref(signUpForm);
+    const url = new URL(`${BASE_URL}/users/register`);
+    url.search = new URLSearchParams({ phone, password, name }).toString();
+    const response = await fetch(url);
+    const { success, msg } = await response.json();
+    if (!success) {
+      ElMessage({
+        message: `注册失败，请重试\n${msg}`,
+        type: 'error',
+      });
+    } else {
+      signUp.value = !signUp.value;
+      ElMessage({
+        message: '注册成功，请进行登录',
+        type: 'success',
+      });
+    }
   });
 };
-const onSignIn = () => {
-  const { phone, password } = toRefs(signInForm);
-  fetch(`${BASE_URL}/user/login`, {
-    method: 'GET',
-    params: {
-      phone,
-      password,
-    },
+
+const onSignIn = (formEl) => {
+  if (!formEl) return;
+  formEl.validate(async (valid) => {
+    if (!valid) return false;
+    const { phone, password } = unref(signInForm);
+    const url = new URL(`${BASE_URL}/users/login`);
+    url.search = new URLSearchParams({ phone, password }).toString();
+    const response = await fetch(url);
+    const { success, token, msg } = await response.json();
+    if (!success) {
+      ElMessage({
+        message: `登录失败，请重试\n${msg}`,
+        type: 'error',
+      });
+    } else {
+      ElMessage({
+        message: '登录成功，即将进行跳转',
+        type: 'success',
+      });
+      localStorage.setItem('token', token);
+      setTimeout(() => {
+        router.push({ path: '/list' });
+      }, 2000);
+    }
   });
 };
 </script>
@@ -149,7 +231,7 @@ a {
   font-size: 1rem;
 }
 
-button {
+.button {
   border-radius: 20px;
   border: 1px solid transparent;
   background-color: #09636b;
@@ -171,12 +253,12 @@ button {
   }
 }
 
-button.invert {
+.invert {
   background-color: transparent;
   border-color: #fff;
 }
 
-form {
+.form {
   position: absolute;
   top: 0;
   display: flex;

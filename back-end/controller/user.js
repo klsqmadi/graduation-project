@@ -11,6 +11,8 @@ const USER_CODE = {
   LOGIN_FAIL: 9,
   EDIT_SUC: 10,
   EDIT_FAIL: 11,
+  FIND_USER_SUC: 12,
+  FIND_USER_FAIL: 13,
 };
 class UserManager {
   async register(phone, name, password) {
@@ -29,7 +31,7 @@ class UserManager {
   }
   async login(phone, password) {
     try {
-      const findUser = await this.findUser(phone);
+      const { data: findUser, code } = await this.findUser(phone);
       if (!findUser) {
         return {
           code: USER_CODE.NO_USER,
@@ -71,8 +73,19 @@ class UserManager {
     return findUser ? USER_CODE.EXIT : USER_CODE.NO_EXIT;
   }
   async findUser(phone) {
-    const findUser = await User.findOne({ where: { phone } });
-    return findUser;
+    try {
+      const findUser = await User.findOne({ where: { phone } });
+      return {
+        code: USER_CODE.FIND_USER_SUC,
+        data: findUser,
+      };
+    } catch (error) {
+      console.log(error);
+      return {
+        code: USER_CODE.FIND_USER_FAIL,
+        data: null,
+      }
+    }
   }
 }
 class RegisterUser {
