@@ -1,4 +1,5 @@
 ## README
+基于 lucky-sheet 实现的在线协同表格，后台基于 koa，前端基于 Vue3
 ### Version
 - ```Nodejs: 18.16.0```
 ### Tailwindcss
